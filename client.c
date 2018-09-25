@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[]) {
 
-  GtkWidget *window, *vbox, *vMainBox, *vFriendsBox, *hInputBox, *menubar, *fileMenu, *aboutMenu, *fileMi, *quitMi, *aboutMi, *helpMi, *sendBtn, *chatEntry, *statusCombo, *hBox, *friendsLabel, *messagesScrollWindow, *vChatBox, *msg;
+  GtkWidget *window, *vbox, *vMainBox, *vFriendsBox, *hInputBox, *menubar, *fileMenu, *aboutMenu, *fileMi, *quitMi, *aboutMi, *helpMi, *sendBtn, *chatEntry, *statusCombo, *hBox, *friendsLabel, *messagesScrollWindow, *vChatBox, *msg, *friendsScrollWindow, *vFriendsBoxView;
   char buffer[32];
   int i, j;
 
@@ -16,17 +16,27 @@ int main(int argc, char *argv[]) {
   messagesScrollWindow = gtk_scrolled_window_new (NULL, NULL);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (messagesScrollWindow),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+
+  friendsScrollWindow = gtk_scrolled_window_new (NULL, NULL);
+  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (friendsScrollWindow),
+                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+
+  gtk_widget_set_size_request(messagesScrollWindow, 300, 300);
+  gtk_widget_set_size_request(friendsScrollWindow, 300, 300);
   
 
   vbox = gtk_vbox_new(FALSE, 0);
   vMainBox = gtk_vbox_new(FALSE, 0);
   vChatBox = gtk_vbox_new(FALSE, 0);
   vFriendsBox = gtk_vbox_new(FALSE, 0);
+  vFriendsBoxView = gtk_vbox_new(FALSE, 0);
   hInputBox = gtk_hbox_new(FALSE, 0);
   hBox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
 
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(messagesScrollWindow), vChatBox);
+
+  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(friendsScrollWindow), vFriendsBoxView);
 
   menubar = gtk_menu_bar_new();
   fileMenu = gtk_menu_new();
@@ -55,16 +65,18 @@ int main(int argc, char *argv[]) {
   gtk_menu_shell_append(GTK_MENU_SHELL(menubar), fileMi);
   gtk_menu_shell_append(GTK_MENU_SHELL(menubar), aboutMi);
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(vbox), hBox, FALSE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hBox), vMainBox, FALSE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hBox), vFriendsBox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), hBox, FALSE, FALSE, 10);
+  gtk_box_pack_start(GTK_BOX(hBox), vMainBox, FALSE, FALSE, 10);
+  gtk_box_pack_start(GTK_BOX(hBox), vFriendsBox, TRUE, TRUE, 10);
   gtk_box_pack_start(GTK_BOX(vMainBox), messagesScrollWindow, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(vMainBox), hInputBox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vMainBox), hInputBox, FALSE, FALSE, 10);
+
+  //gtk_box_pack_start(GTK_BOX(vFriendsBox), friendsLabel, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vFriendsBox), friendsScrollWindow, TRUE, TRUE, 0);
 
   gtk_box_pack_start(GTK_BOX(hInputBox), chatEntry, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(hInputBox), sendBtn, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(hInputBox), statusCombo, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(vFriendsBox), friendsLabel, FALSE, FALSE, 0);
 
   for (i = 0; i < 10; i++) {
     for (j = 0; j < 10; j++){
