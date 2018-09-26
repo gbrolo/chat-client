@@ -8,15 +8,23 @@ typedef struct {
   char *msg;
 } message;
 
+typedef struct {
+  char *username;
+  char *status;
+} user;
+
 int main(int argc, char *argv[]) {
   // GTK widgets (UI elements)
-  GtkWidget *window, *vbox, *vMainBox, *vFriendsBox, *hInputBox, *menubar, *fileMenu, *aboutMenu, *fileMi, *quitMi, *aboutMi, *helpMi, *sendBtn, *chatEntry, *statusCombo, *hBox, *friendsLabel, *messagesScrollWindow, *vChatBox, *msg, *friendsScrollWindow, *vFriendsBoxView;
+  GtkWidget *window, *vbox, *vMainBox, *vFriendsBox, *hInputBox, *menubar, *fileMenu, *aboutMenu, *fileMi, *quitMi, *aboutMi, *helpMi, *sendBtn, *chatEntry, *statusCombo, *hBox, *friendsLabel, *messagesScrollWindow, *vChatBox, *msg, *friendsScrollWindow, *vFriendsBoxView, *hFriendInfoBox, *friendInfoBtn, *friendSendChatBtn;
 
   char buffer[32];
   int i, j;
 
   // array to hold messages
   message messages[2];
+
+  // array to hold users
+  user users[2];
 
   // temporary message creation for testing
   message msg1, msg2;
@@ -26,6 +34,15 @@ int main(int argc, char *argv[]) {
   msg2.user = "user_2";
   msg2.msg = "msg_2";
   messages[1] = msg2;
+
+  // temporary users creation for testing
+  user usr1, usr2;
+  usr1.username = "user_1";
+  usr1.status = "ACTIVE";
+  users[0] = usr1;
+  usr2.username = "user_2";
+  usr2.status = "BUSY";
+  users[1] = usr2;
 
   gtk_init(&argc, &argv);
 
@@ -53,7 +70,7 @@ int main(int argc, char *argv[]) {
   vMainBox = gtk_vbox_new(FALSE, 0);
   vChatBox = gtk_vbox_new(FALSE, 0);
   vFriendsBox = gtk_vbox_new(FALSE, 0);
-  vFriendsBoxView = gtk_vbox_new(FALSE, 0);
+  vFriendsBoxView = gtk_vbox_new(FALSE, 0);  
   hInputBox = gtk_hbox_new(FALSE, 0);
   hBox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -73,7 +90,7 @@ int main(int argc, char *argv[]) {
   helpMi = gtk_menu_item_new_with_label("Help");
 
   // GTK widgets
-  sendBtn = gtk_button_new_with_label("Send");
+  sendBtn = gtk_button_new_with_label("Send");  
 
   chatEntry = gtk_entry_new();
 
@@ -110,6 +127,19 @@ int main(int argc, char *argv[]) {
     sprintf(buffer, "%s: %s\n", messages[i].user, messages[i].msg);
     msg = gtk_label_new(buffer);
     gtk_box_pack_start(GTK_BOX(vChatBox), msg, FALSE, FALSE, 0);
+  }
+
+  // render user list
+  for (i = 0; i < sizeof(users)/sizeof(users[0]); i++) {
+    sprintf(buffer, "%s: %s", users[i].username, users[i].status);
+    msg = gtk_label_new(buffer);
+    friendInfoBtn = gtk_button_new_with_label("View info");
+    friendSendChatBtn = gtk_button_new_with_label("Chat");
+    hFriendInfoBox = gtk_hbox_new(TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), msg, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendInfoBtn, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendSendChatBtn, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vFriendsBoxView), hFriendInfoBox, FALSE, FALSE, 0);
   }
 
   // render example
