@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < sizeof(messages)/sizeof(messages[0]); i++) {
     sprintf(buffer, "%s: %s\n", messages[i].user, messages[i].msg);
     msg = gtk_label_new(buffer);
+    gtk_misc_set_alignment(GTK_MISC(msg), 0.0, 0.5);
     gtk_box_pack_start(GTK_BOX(vChatBox), msg, FALSE, FALSE, 0);
   }
 
@@ -133,13 +134,14 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < sizeof(users)/sizeof(users[0]); i++) {
     sprintf(buffer, "%s: %s", users[i].username, users[i].status);
     msg = gtk_label_new(buffer);
+    gtk_misc_set_alignment(GTK_MISC(msg), 0.0, 0.5);
     friendInfoBtn = gtk_button_new_with_label("View info");
     friendSendChatBtn = gtk_button_new_with_label("Chat");
     hFriendInfoBox = gtk_hbox_new(TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), msg, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendInfoBtn, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendSendChatBtn, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(vFriendsBoxView), hFriendInfoBox, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), msg, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendInfoBtn, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(hFriendInfoBox), friendSendChatBtn, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(vFriendsBoxView), hFriendInfoBox, FALSE, FALSE, 5);
   }
 
   // render example
