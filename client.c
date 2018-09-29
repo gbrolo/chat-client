@@ -4,20 +4,38 @@
 
 // message struct: this will hold messages provided by server
 typedef struct {
-  char *user;
-  char *msg;
+  char *from;
+  char *message;
+  char *action;
 } message;
 
 typedef struct {
-  char *username;
+  char *id;
+  char *name;
   char *status;
 } user;
+
+int renderMessages(message *messages, GtkWidget *msg, GtkWidget *vChatBox){
+  char buffer[32];
+  int i;
+  printf("messages size %d\n", sizeof(messages)/sizeof(messages[0]));
+  for (i = 0; i < sizeof(messages)/sizeof(messages[0]); i++) {
+    printf("%d", i);
+    sprintf(buffer, "%s: %s\n", messages[i].from, messages[i].message);
+    msg = gtk_label_new(buffer);
+    gtk_misc_set_alignment(GTK_MISC(msg), 0.0, 0.5);
+    gtk_box_pack_start(GTK_BOX(vChatBox), msg, FALSE, FALSE, 0);
+  }
+
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   // GTK widgets (UI elements)
   GtkWidget *window, *vbox, *vMainBox, *vFriendsBox, *hInputBox, *menubar, *fileMenu, *aboutMenu, *fileMi, *quitMi, *aboutMi, *helpMi, *sendBtn, *chatEntry, *statusCombo, *hBox, *friendsLabel, *messagesScrollWindow, *vChatBox, *msg, *friendsScrollWindow, *vFriendsBoxView, *hFriendInfoBox, *friendInfoBtn, *friendSendChatBtn;
 
   char buffer[32];
+  char currentFrom[32];
   int i, j;
 
   // array to hold messages
@@ -28,20 +46,22 @@ int main(int argc, char *argv[]) {
 
   // temporary message creation for testing
   message msg1, msg2;
-  msg1.user = "user_1";
-  msg1.msg = "msg_1";
+  msg1.from = "user_1";
+  msg1.message = "msg_1";
   messages[0] = msg1;
-  msg2.user = "user_2";
-  msg2.msg = "msg_2";
+  msg2.from = "user_2";
+  msg2.message = "msg_2";
   messages[1] = msg2;
 
   // temporary users creation for testing
   user usr1, usr2;
-  usr1.username = "user_1";
-  usr1.status = "ACTIVE";
+  usr1.id = "0";
+  usr1.name = "user_1";
+  usr1.status = "active";
   users[0] = usr1;
-  usr2.username = "user_2";
-  usr2.status = "BUSY";
+  usr2.id = "1"; 
+  usr2.name = "user_2";
+  usr2.status = "busy";
   users[1] = usr2;
 
   gtk_init(&argc, &argv);
@@ -123,8 +143,9 @@ int main(int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(hInputBox), statusCombo, TRUE, TRUE, 0);
 
   // render messages
+  //renderMessages(messages, msg, vChatBox);
   for (i = 0; i < sizeof(messages)/sizeof(messages[0]); i++) {
-    sprintf(buffer, "%s: %s\n", messages[i].user, messages[i].msg);
+    sprintf(buffer, "%s: %s\n", messages[i].from, messages[i].message);
     msg = gtk_label_new(buffer);
     gtk_misc_set_alignment(GTK_MISC(msg), 0.0, 0.5);
     gtk_box_pack_start(GTK_BOX(vChatBox), msg, FALSE, FALSE, 0);
@@ -132,7 +153,7 @@ int main(int argc, char *argv[]) {
 
   // render user list
   for (i = 0; i < sizeof(users)/sizeof(users[0]); i++) {
-    sprintf(buffer, "%s: %s", users[i].username, users[i].status);
+    sprintf(buffer, "%s: %s", users[i].name, users[i].status);
     msg = gtk_label_new(buffer);
     gtk_misc_set_alignment(GTK_MISC(msg), 0.0, 0.5);
     friendInfoBtn = gtk_button_new_with_label("View info");
