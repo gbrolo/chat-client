@@ -42,12 +42,23 @@ typedef struct chat_client_ui {
   GtkWidget *friendSendChatBtn;
   GtkWidget *msg;
   GtkWidget *chatMsg;
+  GtkWidget *statusLbl;
   char buffer[32];
-  char currentStatus[32];
+  char *currentStatus;
   message messages[2];
   user users[2];
   int i, j;
 } ChatClient;
+
+void changeStatus(GtkWidget *combo, gpointer data) {
+  char comboBuffer[32];
+  char labelBuffer[32];
+  sprintf(comboBuffer, "%s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
+  sprintf(labelBuffer, "You are %s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
+  gtk_label_set_text(GTK_LABEL(((ChatClient *)data)->statusLbl),labelBuffer);
+  // send status with comboBuffer
+  g_print("%s\n", comboBuffer);
+}
 
 // here we need to send the message to server
 void sendMessage(GtkWidget *button, gpointer data) {
@@ -128,6 +139,9 @@ int main(int argc, char *argv[]) {
 
   gtk_init(&argc, &argv);
 
+  // initial user status
+  chat.currentStatus = "active";
+
   // main window
   chat.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_position(GTK_WINDOW(chat.window), GTK_WIN_POS_CENTER);
@@ -138,7 +152,7 @@ int main(int argc, char *argv[]) {
   chat.messagesScrollWindow = gtk_scrolled_window_new (NULL, NULL);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (chat.messagesScrollWindow),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
-  gtk_widget_set_size_request(chat.messagesScrollWindow, 300, 300);
+  gtk_widget_set_size_request(chat.messagesScrollWindow, 300, 250);
 
   // scrollable window for users in chatroom
   chat.friendsScrollWindow = gtk_scrolled_window_new (NULL, NULL);
@@ -177,10 +191,14 @@ int main(int argc, char *argv[]) {
 
   chat.friendsLabel = gtk_label_new("Connected people");
 
+  chat.statusLbl = gtk_label_new("You are active");
+
   chat.statusCombo = gtk_combo_box_new_text();
   gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Active");
   gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Busy");
   gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Inactive");
+
+  g_signal_connect(G_OBJECT(chat.statusCombo), "changed", G_CALLBACK(changeStatus), &chat);
 
   // widget placement
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(chat.fileMi), chat.fileMenu);
@@ -194,6 +212,7 @@ int main(int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(chat.hBox), chat.vMainBox, FALSE, FALSE, 10);
   gtk_box_pack_start(GTK_BOX(chat.hBox), chat.vFriendsBox, TRUE, TRUE, 10);
   gtk_box_pack_start(GTK_BOX(chat.vMainBox), chat.messagesScrollWindow, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(chat.vMainBox), chat.statusLbl, TRUE, TRUE, 10);
   gtk_box_pack_start(GTK_BOX(chat.vMainBox), chat.hInputBox, FALSE, FALSE, 10);
 
   gtk_box_pack_start(GTK_BOX(chat.vFriendsBox), chat.friendsScrollWindow, TRUE, TRUE, 0);
