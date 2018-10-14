@@ -43,10 +43,19 @@ typedef struct chat_client_ui {
   GtkWidget *msg;
   GtkWidget *chatMsg;
   char buffer[32];
+  char currentStatus[32];
   message messages[2];
   user users[2];
   int i, j;
 } ChatClient;
+
+// here we need to send the message to server
+void sendMessage(GtkWidget *button, gpointer data) {
+  char entryBuffer[32];
+  sprintf(entryBuffer, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->chatEntry)));
+  // send message with entryBuffer
+  g_print("%s\n", entryBuffer);
+}
 
 // Here we need to make the call to the server to fill up messages list
 void renderMessages(GtkWidget *widget, gpointer data){
@@ -161,7 +170,8 @@ int main(int argc, char *argv[]) {
   chat.helpMi = gtk_menu_item_new_with_label("Help");
 
   // GTK widgets
-  chat.sendBtn = gtk_button_new_with_label("Send");  
+  chat.sendBtn = gtk_button_new_with_label("Send");
+  g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(sendMessage), &chat); 
 
   chat.chatEntry = gtk_entry_new();
 
