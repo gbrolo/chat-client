@@ -50,7 +50,8 @@ typedef struct chat_client_ui {
 
 // Here we need to make the call to the server to fill up messages list
 void renderMessages(GtkWidget *widget, gpointer data){
-  int i = ((ChatClient *)data)->i;  
+  int i = ((ChatClient *)data)->i;
+  char userIdBuffer[32];  
 
   GList *children, *iter;
   children = gtk_container_get_children(GTK_CONTAINER(((ChatClient *)data)->vChatBox));
@@ -58,10 +59,18 @@ void renderMessages(GtkWidget *widget, gpointer data){
     gtk_widget_destroy(GTK_WIDGET(iter->data));
   g_list_free(children);
 
+  // find out what is the id of the user sending the messages
+  for (i = 0; i < sizeof(((ChatClient *)data)->users)/sizeof(((ChatClient *)data)->users[0]); i++) {
+    if (strcmp(gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->users[i].name) == 0) {
+      sprintf(userIdBuffer, "%s", ((ChatClient *)data)->users[i].id);
+    }
+  }
+
   for (i = 0; i < sizeof(((ChatClient *)data)->messages)/sizeof(((ChatClient *)data)->messages[0]); i++) {
-    if (strcmp(gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->messages[i].from) == 0) {
+    // gtk_button_get_label(GTK_BUTTON(widget))    ((ChatClient *)data)->messages[i].from
+    if (strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].from) == 0) {
         sprintf(((ChatClient *)data)->buffer, "%s: %s\n", 
-            ((ChatClient *)data)->messages[i].from, ((ChatClient *)data)->messages[i].message);
+            gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->messages[i].message);
         ((ChatClient *)data)->chatMsg = gtk_label_new(((ChatClient *)data)->buffer);
         gtk_misc_set_alignment(GTK_MISC(((ChatClient *)data)->chatMsg), 0.0, 0.5);
         gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vChatBox), ((ChatClient *)data)->chatMsg, FALSE, FALSE, 0);
@@ -89,10 +98,10 @@ void fetchUsers(gpointer data) {
 // make connection to server here
 void fetchMessages(gpointer data) {
   message msg1, msg2;
-  msg1.from = "user_1";
+  msg1.from = "0";
   msg1.message = "msg_1";
   ((ChatClient *)data)->messages[0] = msg1;
-  msg2.from = "user_2";
+  msg2.from = "1";
   msg2.message = "msg_2";
   ((ChatClient *)data)->messages[1] = msg2;
 }
