@@ -5,13 +5,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h> 
-#include <unistd.h>
-#include <netinet/in.h>
-#include <net/if.h>
-
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
+#include <errno.h>
+#include<unistd.h>    
 
 
 
@@ -188,40 +184,83 @@ void fetchMessages(gpointer data) {
   ((ChatClient *)data)->messages[1] = msg2;
 }
 
-int main(int argc, char *argv[]) {
+char * getHandshakeJson(){
   int sockfd;
-  char buffer[1000];
   char server_reply[2000];
   ssize_t n;
 
-//=======================0.0.0.0===============================
-  int fd;
-  struct ifreq ifr;
-  fd = socket(AF_INET, SOCK_DGRAM, 0);
- /* I want to get an IPv4 IP address */
-  ifr.ifr_addr.sa_family = AF_INET;
- /* I want IP address attached to "eth0" */
-  strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
- ioctl(fd, SIOCGIFADDR, &ifr);
- close(fd);
- /* display result */
- printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
-//=======================0.0.0.0===============================
+  const char* google_dns_server = "8.8.8.8";
+  int dns_port = 53;
+   
+  struct sockaddr_in serv;
+   
+  int sock = socket ( AF_INET, SOCK_DGRAM, 0);
+   
+  //Socket could not be created
+  if(sock < 0)
+  {
+      perror("Socket error");
+  }
+   
+  memset( &serv, 0, sizeof(serv) );
+  serv.sin_family = AF_INET;
+  serv.sin_addr.s_addr = inet_addr( google_dns_server );
+  serv.sin_port = htons( dns_port );
+
+  int err = connect( sock , (const struct sockaddr*) &serv , sizeof(serv) );
+   
+  struct sockaddr_in name;
+  socklen_t namelen = sizeof(name);
+  err = getsockname(sock, (struct sockaddr*) &name, &namelen);
+       
+  char buffer[100];
+  const char* p = inet_ntop(AF_INET, &name.sin_addr, buffer, 100);
+       
+  if(p != NULL)
+  {
+      printf("Local ip is : %s \n" , buffer);
+  }
+  else
+  {
+      //Some error
+      printf ("Error number : %d . Error message : %s \n" , errno , strerror(errno));
+  }
+
 
   //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
-  char *port; 
-  char *ip; 
-  char *username;
+  char *port = ""; 
+  char *ip = "";
+  char *username = ""; 
 
-  size_t raw_length; 
-  int length = 0; 
   char * hostSol = "{\"host\": "; 
   char * originSol = ", \"origin\" : "; 
   char * userSol = ", \"user\" : ";
   char * endJson = "}"; 
 
   //Get my IP
-  char *myIP = INADDR_ANY;  
+  char* requestID; 
+  requestID = malloc(strlen(hostSol) + strlen(originSol) + strlen(userSol) + strlen(endJson) 
+              + strlen(ip) + strlen(username) + strlen(buffer));
+  
+  strcpy(requestID, ""); 
+  strcat(requestID, hostSol); 
+  strcat(requestID, ip);
+  strcat(requestID, originSol);
+  strcat(requestID, buffer); 
+  strcat(requestID, userSol);
+  strcat(requestID, username);
+  strcat(requestID, endJson);
+
+  return requestID; 
+}
+
+
+int main(int argc, char *argv[]) {
+
+  char * handshake = getHandshakeJson(); 
+  printf("%s", handshake); 
+
+  
 
   // printf("%zu\n", raw_length);
   // Unica forma de imprimir un size_t
@@ -384,8 +423,6 @@ int main(int argc, char *argv[]) {
   gtk_widget_show_all(chat.window);
 
   gtk_main();
-
-  close(sockfd);
 
   return 0;
 }
