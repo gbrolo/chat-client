@@ -2,13 +2,24 @@
 #include <gmodule.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h> 
 #include <sys/socket.h>
 #include <errno.h>
-#include<unistd.h>    
+#include <unistd.h>    
+#include <pthread.h>
 
+#define BUFFER_MSJ_SIZE 1024
+
+struct sockaddr_in server; //This is our main socket variable.
+int fd; //This is the socket file descriptor that will be used to identify the socket
+int conn; //This is the connection file descriptor.
+char mensaje[BUFFER_MSJ_SIZE] = ""; //This array will store the messages that are sent by the server
+char mensaje2[BUFFER_MSJ_SIZE] = "";
+char *server_IP;
+u_short port;
 
 
 // message struct: this will hold messages provided by server
@@ -68,6 +79,8 @@ typedef struct chat_client_ui {
   user users[50];
   int i, j;
 } ChatClient;
+
+
 
 void showHelp(GtkWidget *widget, gpointer window) {
   GtkWidget *dialog;
@@ -260,7 +273,8 @@ int main(int argc, char *argv[]) {
   char * handshake = getHandshakeJson(); 
   printf("%s", handshake); 
 
-  
+
+
 
   // printf("%zu\n", raw_length);
   // Unica forma de imprimir un size_t
