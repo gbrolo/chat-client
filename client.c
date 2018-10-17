@@ -43,12 +43,36 @@ typedef struct chat_client_ui {
   GtkWidget *msg;
   GtkWidget *chatMsg;
   GtkWidget *statusLbl;
+  GtkWidget *infoHBox;
+  GtkWidget *infoLabelHBox;
+  GtkWidget *userEntry;
+  GtkWidget *portEntry;
+  GtkWidget *ipEntry;
+  GtkWidget *sendInfoBtn;
+  GtkWidget *connectionLbl;
+  int totalMessages;
+  int totalUsers;
   char buffer[32];
+  char userId[32];
   char *currentStatus;
-  message messages[2];
-  user users[2];
+  message messages[500];
+  user users[50];
   int i, j;
 } ChatClient;
+
+void initConnection(GtkWidget *button, gpointer data) {
+  char username[32];
+  char ip[32];
+  char port[32];
+
+  sprintf(username, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->userEntry)));  
+  sprintf(ip, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->ipEntry)));
+  sprintf(port, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->portEntry))); 
+
+  sprintf(((ChatClient *)data)->userId, "2"); 
+
+  g_print("%s, %s, %s\n", username, ip, port);
+}
 
 void changeStatus(GtkWidget *combo, gpointer data) {
   char comboBuffer[32];
@@ -64,8 +88,17 @@ void changeStatus(GtkWidget *combo, gpointer data) {
 void sendMessage(GtkWidget *button, gpointer data) {
   char entryBuffer[32];
   sprintf(entryBuffer, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->chatEntry)));
+  sprintf(((ChatClient *)data)->buffer, "You: %s\n", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->chatEntry)));
+
+  ((ChatClient *)data)->chatMsg = gtk_label_new(((ChatClient *)data)->buffer);
+  gtk_misc_set_alignment(GTK_MISC(((ChatClient *)data)->chatMsg), 0.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vChatBox), ((ChatClient *)data)->chatMsg, FALSE, FALSE, 0);
+
   // send message with entryBuffer
   g_print("%s\n", entryBuffer);
+  g_print("%s\n", ((ChatClient *)data)->buffer);
+
+  gtk_widget_show_all(((ChatClient *)data)->window);
 }
 
 // Here we need to make the call to the server to fill up messages list
@@ -80,15 +113,17 @@ void renderMessages(GtkWidget *widget, gpointer data){
   g_list_free(children);
 
   // find out what is the id of the user sending the messages
-  for (i = 0; i < sizeof(((ChatClient *)data)->users)/sizeof(((ChatClient *)data)->users[0]); i++) {
+  // sizeof(((ChatClient *)data)->users)/sizeof(((ChatClient *)data)->users[0])
+  for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
     if (strcmp(gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->users[i].name) == 0) {
       sprintf(userIdBuffer, "%s", ((ChatClient *)data)->users[i].id);
     }
   }
 
-  for (i = 0; i < sizeof(((ChatClient *)data)->messages)/sizeof(((ChatClient *)data)->messages[0]); i++) {
+  // sizeof(((ChatClient *)data)->messages)/sizeof(((ChatClient *)data)->messages[0]) 
+  for (i = 0; i < ((ChatClient *)data)->totalMessages; i++) {
     // gtk_button_get_label(GTK_BUTTON(widget))    ((ChatClient *)data)->messages[i].from
-    if (strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].from) == 0) {
+    if ((strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].from) == 0)) {
         sprintf(((ChatClient *)data)->buffer, "%s: %s\n", 
             gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->messages[i].message);
         ((ChatClient *)data)->chatMsg = gtk_label_new(((ChatClient *)data)->buffer);
@@ -104,6 +139,7 @@ void renderMessages(GtkWidget *widget, gpointer data){
 
 // make connection to server here
 void fetchUsers(gpointer data) {
+  ((ChatClient *)data)->totalUsers = 2;
   user usr1, usr2;
   usr1.id = "0";
   usr1.name = "user_1";
@@ -116,7 +152,8 @@ void fetchUsers(gpointer data) {
 }
 
 // make connection to server here
-void fetchMessages(gpointer data) {
+void fetchMessages(gpointer data) {  
+  ((ChatClient *)data)->totalMessages = 2;
   message msg1, msg2;
   msg1.from = "0";
   msg1.message = "msg_1";
@@ -167,6 +204,8 @@ int main(int argc, char *argv[]) {
   chat.vFriendsBox = gtk_vbox_new(FALSE, 0);
   chat.vFriendsBoxView = gtk_vbox_new(FALSE, 0);  
   chat.hInputBox = gtk_hbox_new(FALSE, 0);
+  chat.infoHBox = gtk_hbox_new(FALSE, 0);
+  chat.infoLabelHBox = gtk_hbox_new(FALSE, 0);
   chat.hBox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(chat.window), chat.vbox);
 
@@ -185,11 +224,18 @@ int main(int argc, char *argv[]) {
 
   // GTK widgets
   chat.sendBtn = gtk_button_new_with_label("Send");
-  g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(sendMessage), &chat); 
+  g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(sendMessage), &chat);
+
+  chat.sendInfoBtn = gtk_button_new_with_label("Connect"); 
+  g_signal_connect(GTK_OBJECT(chat.sendInfoBtn), "clicked", GTK_SIGNAL_FUNC(initConnection), &chat);
 
   chat.chatEntry = gtk_entry_new();
+  chat.userEntry = gtk_entry_new();
+  chat.portEntry = gtk_entry_new();
+  chat.ipEntry = gtk_entry_new();
 
   chat.friendsLabel = gtk_label_new("Connected people");
+  chat.connectionLbl = gtk_label_new("Username, IP address, port");
 
   chat.statusLbl = gtk_label_new("You are active");
 
@@ -208,6 +254,13 @@ int main(int argc, char *argv[]) {
   gtk_menu_shell_append(GTK_MENU_SHELL(chat.menubar), chat.fileMi);
   gtk_menu_shell_append(GTK_MENU_SHELL(chat.menubar), chat.aboutMi);
   gtk_box_pack_start(GTK_BOX(chat.vbox), chat.menubar, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(chat.vbox), chat.infoLabelHBox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(chat.infoLabelHBox), chat.connectionLbl, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(chat.vbox), chat.infoHBox, FALSE, FALSE, 10);
+  gtk_box_pack_start(GTK_BOX(chat.infoHBox), chat.userEntry, TRUE, TRUE, 10);
+  gtk_box_pack_start(GTK_BOX(chat.infoHBox), chat.ipEntry, TRUE, TRUE, 10);
+  gtk_box_pack_start(GTK_BOX(chat.infoHBox), chat.portEntry, TRUE, TRUE, 10);
+  gtk_box_pack_start(GTK_BOX(chat.infoHBox), chat.sendInfoBtn, TRUE, TRUE, 10);
   gtk_box_pack_start(GTK_BOX(chat.vbox), chat.hBox, FALSE, FALSE, 10);
   gtk_box_pack_start(GTK_BOX(chat.hBox), chat.vMainBox, FALSE, FALSE, 10);
   gtk_box_pack_start(GTK_BOX(chat.hBox), chat.vFriendsBox, TRUE, TRUE, 10);
@@ -222,7 +275,8 @@ int main(int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(chat.hInputBox), chat.statusCombo, TRUE, TRUE, 0);
 
   // render user list
-  for (i = 0; i < sizeof(chat.users)/sizeof(chat.users[0]); i++) {
+  // sizeof(chat.users)/sizeof(chat.users[0])
+  for (i = 0; i < chat.totalUsers; i++) {
     sprintf(chat.buffer, "User is: %s", chat.users[i].status);
     chat.msg = gtk_label_new(chat.buffer);
     gtk_misc_set_alignment(GTK_MISC(chat.msg), 0.0, 0.5);
