@@ -60,6 +60,18 @@ typedef struct chat_client_ui {
   int i, j;
 } ChatClient;
 
+void showHelp(GtkWidget *widget, gpointer window) {
+  GtkWidget *dialog;
+  dialog = gtk_message_dialog_new(window,
+		GTK_DIALOG_DESTROY_WITH_PARENT,
+		GTK_MESSAGE_INFO,
+		GTK_BUTTONS_OK,
+		"First add your username, the IP address for server and port in the upper inputs. \nSend messages using the bottom input and clicking on \"Send\" button.\nChange your status using the contiguous combobox.\nYou can send messages to active users by clicking on the buttons with their names on the right.");
+  gtk_window_set_title(GTK_WINDOW(dialog), "Help");
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+}
+
 void initConnection(GtkWidget *button, gpointer data) {
   char username[32];
   char ip[32];
@@ -307,6 +319,8 @@ int main(int argc, char *argv[]) {
 
   g_signal_connect(G_OBJECT(chat.quitMi), "activate",
         G_CALLBACK(gtk_main_quit), NULL);
+
+  g_signal_connect(G_OBJECT(chat.helpMi), "activate", G_CALLBACK(showHelp), (gpointer) chat.window);
 
   gtk_widget_show_all(chat.window);
 
