@@ -1,6 +1,19 @@
 #include <gtk/gtk.h>
 #include <gmodule.h>
 #include <string.h>
+#include <stdio.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h> 
+#include <unistd.h>
+#include <netinet/in.h>
+#include <net/if.h>
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+
+
 
 // message struct: this will hold messages provided by server
 typedef struct {
@@ -176,6 +189,52 @@ void fetchMessages(gpointer data) {
 }
 
 int main(int argc, char *argv[]) {
+  int sockfd;
+  char buffer[1000];
+  char server_reply[2000];
+  ssize_t n;
+
+//=======================0.0.0.0===============================
+  int fd;
+  struct ifreq ifr;
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+ /* I want to get an IPv4 IP address */
+  ifr.ifr_addr.sa_family = AF_INET;
+ /* I want IP address attached to "eth0" */
+  strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+ ioctl(fd, SIOCGIFADDR, &ifr);
+ close(fd);
+ /* display result */
+ printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+//=======================0.0.0.0===============================
+
+  //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
+  char *port; 
+  char *ip; 
+  char *username;
+
+  size_t raw_length; 
+  int length = 0; 
+  char * hostSol = "{\"host\": "; 
+  char * originSol = ", \"origin\" : "; 
+  char * userSol = ", \"user\" : ";
+  char * endJson = "}"; 
+
+  //Get my IP
+  char *myIP = INADDR_ANY;  
+
+  // printf("%zu\n", raw_length);
+  // Unica forma de imprimir un size_t
+
+  //Enviar string requestID para inicial :D 
+  //Se espera recibir mensaje que contenga string de json
+  //convertirlo a un json object
+  //iterarlo y buscar el id que envio el server :D 
+
+
+  //---------------------------
+
+
   ChatClient chat;
   int i = chat.i;
   int j = chat.j;
@@ -325,6 +384,8 @@ int main(int argc, char *argv[]) {
   gtk_widget_show_all(chat.window);
 
   gtk_main();
+
+  close(sockfd);
 
   return 0;
 }
