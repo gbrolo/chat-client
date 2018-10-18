@@ -21,14 +21,14 @@ char mensaje2[BUFFER_MSJ_SIZE] = "";
 char *server_IP;
 u_short port;
 
-char * actionSol = "{ \"action\": ";
-char * fromSol = ", \"form\": ";
-char * toSol = ", \"to\": ";
-char * messageSol = ", \"message\": ";   
-char * hostSol = "{\"host\": "; 
-char * originSol = ", \"origin\" : "; 
-char * userSol = ", \"user\" : ";
-char * statusSol = "\"status\": ";
+char * actionSol = "{ action: ";
+char * fromSol = ", form: ";
+char * toSol = ", to: ";
+char * messageSol = ", message: ";   
+char * hostSol = "{host: "; 
+char * originSol = ", origin : "; 
+char * userSol = ", user : ";
+char * statusSol = "status:    ";
 char * endJson = "}"; 
 
 char getUsersResult[1000]; 
@@ -163,6 +163,9 @@ void sendMessage(GtkWidget *button, gpointer data) {
   g_print("%s\n", ((ChatClient *)data)->buffer);
 
   gtk_widget_show_all(((ChatClient *)data)->window);
+
+  //=============SearchUsers o lo que fue
+
 }
 
 // Here we need to make the call to the server to fill up messages list
@@ -212,7 +215,7 @@ void renderMessages(GtkWidget *widget, gpointer data){
   gtk_widget_show_all(((ChatClient *)data)->window);
 }
 
-void *  searchUsers(gpointer data){
+void *  searchUsers(){
   int sock;
   struct sockaddr_in server;
   char message[1000] , server_reply[2000];
@@ -227,7 +230,7 @@ void *  searchUsers(gpointer data){
 
   server.sin_addr.s_addr = inet_addr("10.156.52.139");
   server.sin_family = AF_INET;
-  server.sin_port = htons( "8000" );
+  server.sin_port = htons( 8000 );
 
   //Connect to remote server
   if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
@@ -260,35 +263,14 @@ void *  searchUsers(gpointer data){
 
   close(sock);
   sprintf(getUsersResult, server_reply);
-
-
-  int i;
-  for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
-    sprintf(((ChatClient *)data)->buffer, "User is: %s", ((ChatClient *)data)->users[i].status);
-    ((ChatClient *)data)->msg = gtk_label_new(((ChatClient *)data)->buffer);
-    gtk_misc_set_alignment(GTK_MISC(((ChatClient *)data)->msg), 0.0, 0.5);
-    ((ChatClient *)data)->friendInfoBtn = gtk_button_new_with_label("View info");
-    ((ChatClient *)data)->friendSendChatBtn = gtk_button_new_with_label(((ChatClient *)data)->users[i].name);
-    ((ChatClient *)data)->hFriendInfoBox = gtk_hbox_new(TRUE, 0); 
-
-    g_signal_connect(GTK_OBJECT(((ChatClient *)data)->friendSendChatBtn), "clicked", GTK_SIGNAL_FUNC(renderMessages), data);   
-
-    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->friendSendChatBtn, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->friendInfoBtn, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->msg, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vFriendsBoxView), ((ChatClient *)data)->hFriendInfoBox, FALSE, FALSE, 5);
-  } 
-
-  gtk_widget_show_all(((ChatClient *)data)->window); 
 }
 
 
 void renderUsers(gpointer data) {  
 //  pthread_t user_thread;
 //  pthread_create(&user_thread, NULL, searchUsers, NULL);
-
-//  printf("%s", getUsersResult);  
-  
+ //  printf("%s", getUsersResult);  
+   
   int i;
   for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
     sprintf(((ChatClient *)data)->buffer, "User is: %s", ((ChatClient *)data)->users[i].status);
@@ -587,9 +569,6 @@ int main(int argc, char *argv[]) {
   // GTK widgets
   chat.sendBtn = gtk_button_new_with_label("Send");
   g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(sendMessage), &chat);
-
-  chat.sendBtn = gtk_button_new_with_label("Send");
-  g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(searchUsers), &chat);
 
   chat.sendInfoBtn = gtk_button_new_with_label("Connect"); 
   g_signal_connect(GTK_OBJECT(chat.sendInfoBtn), "clicked", GTK_SIGNAL_FUNC(getHandshakeJson), &chat);
