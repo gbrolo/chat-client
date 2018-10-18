@@ -21,10 +21,19 @@ char mensaje2[BUFFER_MSJ_SIZE] = "";
 char *server_IP;
 u_short port;
 
+char * actionSol = "{ \"action\": ";
+char * fromSol = ", \"form\": ";
+char * toSol = ", \"to\": ";
+char * messageSol = ", \"message\": ";   
+char * hostSol = "{\"host\": "; 
+char * originSol = ", \"origin\" : "; 
+char * userSol = ", \"user\" : ";
+char * endJson = "}"; 
 
 // message struct: this will hold messages provided by server
 typedef struct {
   char *from;
+  char *to;
   char *message;
   char *action;
 } message;
@@ -34,6 +43,9 @@ typedef struct {
   char *name;
   char *status;
 } user;
+
+//Information of self
+user myself; 
 
 typedef struct chat_client_ui {
   GtkWidget *window;
@@ -94,6 +106,8 @@ void showHelp(GtkWidget *widget, gpointer window) {
   gtk_widget_destroy(dialog);
 }
 
+//char * getHandshakeJson(char , char , char ); 
+
 void initConnection(GtkWidget *button, gpointer data) {
   char username[32];
   char ip[32];
@@ -106,6 +120,13 @@ void initConnection(GtkWidget *button, gpointer data) {
   sprintf(((ChatClient *)data)->userId, "2"); 
 
   g_print("%s, %s, %s\n", username, ip, port);
+
+  //char * json = getHandshakeJson(&username, &port, &ip); 
+  //printf("%s", json);
+
+
+  //user identification  = {.id = handshake,.name =  username,.status =  ""}; 
+  //myself = identification; 
 }
 
 void changeStatus(GtkWidget *combo, gpointer data) {
@@ -157,7 +178,8 @@ void renderMessages(GtkWidget *widget, gpointer data){
   // sizeof(((ChatClient *)data)->messages)/sizeof(((ChatClient *)data)->messages[0]) 
   for (i = 0; i < ((ChatClient *)data)->totalMessages; i++) {
     // gtk_button_get_label(GTK_BUTTON(widget))    ((ChatClient *)data)->messages[i].from
-    if ((strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].from) == 0)) {
+    if ((strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].from) == 0)
+              && (strcmp(((ChatClient *)data)->userId, ((ChatClient *)data)->messages[i].to) == 0)) {
         sprintf(((ChatClient *)data)->buffer, "%s: %s\n", 
             gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->messages[i].message);
         ((ChatClient *)data)->chatMsg = gtk_label_new(((ChatClient *)data)->buffer);
@@ -165,8 +187,39 @@ void renderMessages(GtkWidget *widget, gpointer data){
         gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vChatBox), ((ChatClient *)data)->chatMsg, FALSE, FALSE, 0);
         g_print("%s: %s\n", ((ChatClient *)data)->messages[i].from, ((ChatClient *)data)->messages[i].message);
         g_print("chatMsg %s", gtk_label_get_text(GTK_LABEL(((ChatClient *)data)->chatMsg)));
+    } 
+
+    if ((strcmp(userIdBuffer, ((ChatClient *)data)->messages[i].to) == 0)
+              && (strcmp(((ChatClient *)data)->userId, ((ChatClient *)data)->messages[i].from) == 0)) {
+        sprintf(((ChatClient *)data)->buffer, "You: %s\n", ((ChatClient *)data)->messages[i].message);
+        ((ChatClient *)data)->chatMsg = gtk_label_new(((ChatClient *)data)->buffer);
+        gtk_misc_set_alignment(GTK_MISC(((ChatClient *)data)->chatMsg), 0.0, 0.5);
+        gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vChatBox), ((ChatClient *)data)->chatMsg, FALSE, FALSE, 0);
+        g_print("%s: %s\n", ((ChatClient *)data)->messages[i].from, ((ChatClient *)data)->messages[i].message);
+        g_print("chatMsg %s", gtk_label_get_text(GTK_LABEL(((ChatClient *)data)->chatMsg)));
     }    
   }
+
+  gtk_widget_show_all(((ChatClient *)data)->window);
+}
+
+void renderUsers(gpointer data) {
+  int i;
+  for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
+    sprintf(((ChatClient *)data)->buffer, "User is: %s", ((ChatClient *)data)->users[i].status);
+    ((ChatClient *)data)->msg = gtk_label_new(((ChatClient *)data)->buffer);
+    gtk_misc_set_alignment(GTK_MISC(((ChatClient *)data)->msg), 0.0, 0.5);
+    ((ChatClient *)data)->friendInfoBtn = gtk_button_new_with_label("View info");
+    ((ChatClient *)data)->friendSendChatBtn = gtk_button_new_with_label(((ChatClient *)data)->users[i].name);
+    ((ChatClient *)data)->hFriendInfoBox = gtk_hbox_new(TRUE, 0); 
+
+    g_signal_connect(GTK_OBJECT(((ChatClient *)data)->friendSendChatBtn), "clicked", GTK_SIGNAL_FUNC(renderMessages), data);   
+
+    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->friendSendChatBtn, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->friendInfoBtn, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->hFriendInfoBox), ((ChatClient *)data)->msg, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vFriendsBoxView), ((ChatClient *)data)->hFriendInfoBox, FALSE, FALSE, 5);
+  } 
 
   gtk_widget_show_all(((ChatClient *)data)->window);
 }
@@ -190,14 +243,29 @@ void fetchMessages(gpointer data) {
   ((ChatClient *)data)->totalMessages = 2;
   message msg1, msg2;
   msg1.from = "0";
+  msg1.to = "2";
   msg1.message = "msg_1";
   ((ChatClient *)data)->messages[0] = msg1;
   msg2.from = "1";
   msg2.message = "msg_2";
+  msg2.to = "0";
   ((ChatClient *)data)->messages[1] = msg2;
 }
 
-char * getHandshakeJson(){
+void getHandshakeJson(GtkWidget *button, gpointer data){
+  char username[32];
+  char ip[32];
+  char port[32];
+
+  sprintf(username, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->userEntry)));  
+  sprintf(ip, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->ipEntry)));
+  sprintf(port, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->portEntry))); 
+
+  sprintf(((ChatClient *)data)->userId, "2"); 
+
+  g_print("%s, %s, %s\n", username, ip, port);
+
+
   int sockfd;
   char server_reply[2000];
   ssize_t n;
@@ -241,49 +309,70 @@ char * getHandshakeJson(){
 
 
   //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
-  char *port = ""; 
-  char *ip = "";
-  char *username = ""; 
-
-  char * hostSol = "{\"host\": "; 
-  char * originSol = ", \"origin\" : "; 
-  char * userSol = ", \"user\" : ";
-  char * endJson = "}"; 
 
   //Get my IP
-  char* requestID; 
-  requestID = malloc(strlen(hostSol) + strlen(originSol) + strlen(userSol) + strlen(endJson) 
-              + strlen(ip) + strlen(username) + strlen(buffer));
-  
-  strcpy(requestID, ""); 
+  char requestID[2000]; 
+  sprintf(requestID, "");   
   strcat(requestID, hostSol); 
   strcat(requestID, ip);
   strcat(requestID, originSol);
-  strcat(requestID, buffer); 
+  strcat(requestID, buffer);
   strcat(requestID, userSol);
   strcat(requestID, username);
   strcat(requestID, endJson);
+  printf("%s", requestID); 
+  
+  // printf("%zu\n", raw_length);
+  // Unica forma de imprimir un size_t
 
-  return requestID; 
+  //return requestID; 
+}
+
+char * getActionJson(int option){
+
+  if(option == 1){
+    //Send_Message
+
+  }
+  if(option == 2){
+    //List_Users
+  }
+  if(option == 3){
+    //Change_status
+  }
+  return "Error"; 
+
 }
 
 
 int main(int argc, char *argv[]) {
 
-  char * handshake = getHandshakeJson(); 
-  printf("%s", handshake); 
+  int sockfd;
+  char buffer[1000];
+  char server_reply[2000];
+  ssize_t n;
 
+  struct sockaddr_in servaddr;
 
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+  if (sockfd == -1) {
+      perror("could not create socket");
+  }
 
-  // printf("%zu\n", raw_length);
-  // Unica forma de imprimir un size_t
+  printf("Created socket\n");
+
+  bzero(&servaddr, sizeof(servaddr));
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_addr.s_addr = inet_addr("10.156.52.139");
+  servaddr.sin_port = htons(8000);
+
+  connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
   //Enviar string requestID para inicial :D 
   //Se espera recibir mensaje que contenga string de json
   //convertirlo a un json object
   //iterarlo y buscar el id que envio el server :D 
-
 
   //---------------------------
 
@@ -351,7 +440,7 @@ int main(int argc, char *argv[]) {
   g_signal_connect(GTK_OBJECT(chat.sendBtn), "clicked", GTK_SIGNAL_FUNC(sendMessage), &chat);
 
   chat.sendInfoBtn = gtk_button_new_with_label("Connect"); 
-  g_signal_connect(GTK_OBJECT(chat.sendInfoBtn), "clicked", GTK_SIGNAL_FUNC(initConnection), &chat);
+  g_signal_connect(GTK_OBJECT(chat.sendInfoBtn), "clicked", GTK_SIGNAL_FUNC(getHandshakeJson), &chat);
 
   chat.chatEntry = gtk_entry_new();
   chat.userEntry = gtk_entry_new();
@@ -400,21 +489,7 @@ int main(int argc, char *argv[]) {
 
   // render user list
   // sizeof(chat.users)/sizeof(chat.users[0])
-  for (i = 0; i < chat.totalUsers; i++) {
-    sprintf(chat.buffer, "User is: %s", chat.users[i].status);
-    chat.msg = gtk_label_new(chat.buffer);
-    gtk_misc_set_alignment(GTK_MISC(chat.msg), 0.0, 0.5);
-    chat.friendInfoBtn = gtk_button_new_with_label("View info");
-    chat.friendSendChatBtn = gtk_button_new_with_label(chat.users[i].name);
-    chat.hFriendInfoBox = gtk_hbox_new(TRUE, 0); 
-
-    g_signal_connect(GTK_OBJECT(chat.friendSendChatBtn), "clicked", GTK_SIGNAL_FUNC(renderMessages), &chat);   
-
-    gtk_box_pack_start(GTK_BOX(chat.hFriendInfoBox), chat.friendSendChatBtn, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(chat.hFriendInfoBox), chat.friendInfoBtn, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(chat.hFriendInfoBox), chat.msg, TRUE, TRUE, 2);
-    gtk_box_pack_start(GTK_BOX(chat.vFriendsBoxView), chat.hFriendInfoBox, FALSE, FALSE, 5);
-  }  
+  
 
   // render example
 //  for (i = 0; i < 10; i++) {
@@ -436,7 +511,21 @@ int main(int argc, char *argv[]) {
 
   gtk_widget_show_all(chat.window);
 
+  void * testFunction (){
+      while(1){
+      //printf("%s", ".");
+      wait(1000000000); 
+    } 
+  }
+
+  pthread_t server_thread;
+  pthread_create(&server_thread, NULL, renderUsers, &chat);
+
+  
+
   gtk_main();
+
+
 
   return 0;
 }
