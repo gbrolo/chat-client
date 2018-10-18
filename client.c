@@ -96,6 +96,7 @@ typedef struct chat_client_ui {
   char buffer[32];
   char userId[32];
   char *currentStatus;
+  char activeConver[32];
   message messages[500];
   user users[50];
   int i, j;
@@ -164,7 +165,62 @@ void sendMessage(GtkWidget *button, gpointer data) {
 
   gtk_widget_show_all(((ChatClient *)data)->window);
 
-  //=============SearchUsers o lo que fue
+  //==============Creacion del JSON==================
+ 
+
+
+  //=============SearchUsers o lo que fue=================
+  int newPort = strtol(servInfo.port , NULL, 10);
+  int sock;
+  struct sockaddr_in server;
+  char message[1000] , server_reply[2000];
+   
+  //Create socket
+  sock = socket(AF_INET , SOCK_STREAM , 0);
+  if (sock == -1)
+  {
+      printf("Could not create socket");
+  }
+  puts("Socket created");
+
+  
+
+  server.sin_addr.s_addr = inet_addr(servInfo.ip);
+  server.sin_family = AF_INET;
+  server.sin_port = htons( newPort );
+
+  //Connect to remote server
+  if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+  {
+      perror("connect failed. Error");
+      return 1;
+  }
+   
+  puts("Connected for messages \n");
+   
+  //keep communicating with server
+ 
+  printf("Enter message : ");
+  scanf("%s" , message);
+   
+  //Send some data
+  if( send(sock , message , strlen(message) , 0) < 0)
+  {
+      puts("Send failed");
+  }
+   
+  //Receive a reply from the server
+  if( recv(sock , server_reply , 2000 , 0) < 0)
+  {
+      puts("recv failed");
+  }
+   
+  puts("\n-----------------------------------------------\nServer reply :");
+  puts(server_reply);
+  puts("\n-----------------------------------------------");
+
+  close(sock);
+  sprintf(getUsersResult, server_reply);
 
 }
 
@@ -184,6 +240,7 @@ void renderMessages(GtkWidget *widget, gpointer data){
   for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
     if (strcmp(gtk_button_get_label(GTK_BUTTON(widget)), ((ChatClient *)data)->users[i].name) == 0) {
       sprintf(userIdBuffer, "%s", ((ChatClient *)data)->users[i].id);
+      sprintf(((ChatClient *)data)->activeConver, ((ChatClient *)data)->users[i].id);
     }
   }
 
@@ -258,8 +315,9 @@ void *  searchUsers(){
       puts("recv failed");
   }
    
-  puts("Server reply :");
+  puts("\n-----------------------------------------------\nServer reply :");
   puts(server_reply);
+  puts("\n-----------------------------------------------");
 
   close(sock);
   sprintf(getUsersResult, server_reply);
@@ -429,8 +487,9 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
    
   //Receive a reply from the server
   
-  puts("Server reply :");
+  puts("\n-----------------------------------------------\nServer reply :");
   puts(server_reply);
+  puts("\n-----------------------------------------------");
 
   close(sock);
   
