@@ -154,16 +154,16 @@ void changeStatus(GtkWidget *combo, gpointer data) {
 
   //==============Creacion del JSON==================
   //Json dentro del cambio de status
-  struct json_object *changeStatus = json_object_new_object(),
+  struct json_object *userStatus = json_object_new_object(),
   *actionSon = json_object_new_string("CHANGED_STATUS"),
   *userSon = json_object_new_string(my.id),
   *statusSon = json_object_new_string(labelBuffer);
 
-  json_object_object_add(changeStatus, "action", actionSon);
-  json_object_object_add(changeStatus, "user", userSon);
-  json_object_object_add(changeStatus, "status", statusSon);
+  json_object_object_add(userStatus, "action", actionSon);
+  json_object_object_add(userStatus, "user", userSon);
+  json_object_object_add(userStatus, "status", statusSon);
   
-  const char *statusChanged = json_object_to_json_string(changeStatus);
+  const char *statusChanged = json_object_to_json_string(userStatus);
 
   //Get my IP
 
@@ -214,7 +214,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
 }
 
 // here we need to send the message to server
-void sendMessage(GtkWidget *button, gpointer data) {
+void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
   char entryBuffer[32];
   sprintf(entryBuffer, "%s", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->chatEntry)));
   sprintf(((ChatClient *)data)->buffer, "You: %s\n", gtk_entry_get_text(GTK_ENTRY(((ChatClient *)data)->chatEntry)));
@@ -247,6 +247,7 @@ void sendMessage(GtkWidget *button, gpointer data) {
   json_object_object_add(messageSent, "message", messageSon);
 
   const char *messageString = json_object_to_json_string(messageSent);
+  puts(messageString);
   //Get my IP
 
   //==============Envio de Paquetes=====================
@@ -263,15 +264,12 @@ void sendMessage(GtkWidget *button, gpointer data) {
   }
   puts("Socket created");
 
-  server.sin_addr.s_addr = inet_addr(servInfo.ip);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( newPort );
+  printf("%s", servInfo.ip); 
+  printf("%s", servInfo.port); 
 
-  puts("\nServerIP: ");
-  puts(servInfo.ip);
-  puts("\nPortInfo");
-  puts(newPort);
-  puts("\n")
+  server.sin_addr.s_addr = inet_addr("192.168.0.21");
+  server.sin_family = AF_INET;
+  server.sin_port = htons( 8000 );
 
   //Connect to remote server
   if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
