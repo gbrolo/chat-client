@@ -159,9 +159,9 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   *userSon = json_object_new_string(my.id),
   *statusSon = json_object_new_string(labelBuffer);
 
-  json_object_object_add(messageSent, "action", actionSon);
-  json_object_object_add(messageSent, "user", userSon);
-  json_object_object_add(messageSent, "status", statusSon);
+  json_object_object_add(changeStatus, "action", actionSon);
+  json_object_object_add(changeStatus, "user", userSon);
+  json_object_object_add(changeStatus, "status", statusSon);
   
   const char *statusChanged = json_object_to_json_string(changeStatus);
 
