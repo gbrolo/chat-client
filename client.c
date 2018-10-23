@@ -22,16 +22,8 @@ char mensaje[BUFFER_MSJ_SIZE] = ""; //This array will store the messages that ar
 char mensaje2[BUFFER_MSJ_SIZE] = "";
 char *server_IP;
 u_short port;
-
-char * actionSol = "{ action: ";
-char * fromSol = ", form: ";
-char * toSol = ", to: ";
-char * messageSol = ", message: ";
-char * hostSol = "{host: ";
-char * originSol = ", origin: ";
-char * userSol = ", user: ";
-char * statusSol = "status:    ";
-char * endJson = "}";
+char servInfoIp[32];
+char servInfoPort[32]; 
 
 char getUsersResult[1000];
 
@@ -44,8 +36,8 @@ typedef struct {
 } message;
 
 typedef struct{
-  char *ip;
-  char *port;
+  char ip[32];
+  char port[32];
 } serverInfo;
 
 typedef struct {
@@ -104,8 +96,6 @@ typedef struct chat_client_ui {
   user users[50];
   int i, j;
 } ChatClient;
-
-
 
 void showHelp(GtkWidget *widget, gpointer window) {
   GtkWidget *dialog;
@@ -168,7 +158,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   //Get my IP
 
  //---------------Envio de paquetes
-  int newPort = strtol(servInfo.port , NULL, 10);
+  int newPort = strtol(servInfoPort , NULL, 10);
   int sock;
   struct sockaddr_in server;
   char message[1000] , server_reply[2000];
@@ -181,7 +171,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   }
   puts("Socket created");
 
-  server.sin_addr.s_addr = inet_addr(servInfo.ip);
+  server.sin_addr.s_addr = inet_addr(servInfoIp);
   server.sin_family = AF_INET;
   server.sin_port = htons( newPort );
 
@@ -251,10 +241,11 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
   //Get my IP
 
   //==============Envio de Paquetes=====================
-  int newPort = strtol(servInfo.port , NULL, 10);
+  int newPort = strtol(servInfoPort , NULL, 10);
   int sock;
   struct sockaddr_in server;
   char message[1000] , server_reply[2000];
+  puts("despues de newport"); 
 
   //Create socket
   sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -264,12 +255,12 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
   }
   puts("Socket created");
 
-  printf("%s", servInfo.ip); 
-  printf("%s", servInfo.port); 
+  printf("%s", servInfoIp); 
+  printf("%s", servInfoPort); 
 
-  server.sin_addr.s_addr = inet_addr("192.168.0.21");
+  server.sin_addr.s_addr = inet_addr(servInfoIp);
   server.sin_family = AF_INET;
-  server.sin_port = htons( 8000 );
+  server.sin_port = htons( newPort );
 
   //Connect to remote server
   if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
@@ -593,8 +584,8 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
   my.id = json_object_to_json_string(id);
   my.name = json_object_to_json_string(user_name);
   my.status = json_object_to_json_string(user_status);
-  servInfo.ip = ip;
-  servInfo.port = port;
+  sprintf(servInfoIp, ip); 
+  sprintf(servInfoPort, port);
   // close(sockfd);
 }
 
@@ -744,9 +735,6 @@ int main(int argc, char *argv[]) {
 
   gtk_widget_show_all(chat.window);
 
-  printf("%s", "Antes del thread\n");
-
-
   void * testFunction (){
       while(1){
         renderUsers(&chat);
@@ -755,8 +743,6 @@ int main(int argc, char *argv[]) {
 
   pthread_t server_thread;
   pthread_create(&server_thread, NULL, renderUsers, &chat);
-
-  printf("%s", "despues del Thread\n");
   gtk_main();
 
   return 0;
