@@ -267,6 +267,12 @@ void sendMessage(GtkWidget *button, gpointer data) {
   server.sin_family = AF_INET;
   server.sin_port = htons( newPort );
 
+  puts("\nServerIP: ");
+  puts(servInfo.ip);
+  puts("\nPortInfo");
+  puts(newPort);
+  puts("\n")
+
   //Connect to remote server
   if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
   {
