@@ -345,32 +345,31 @@ void renderMessages(GtkWidget *widget, gpointer data){
   gtk_widget_show_all(((ChatClient *)data)->window);
 }
 
-void *fillUserList(){
-  struct json_object *requestUsers = json_object_new_object(),
-  *actionSon = json_object_new_string("LIST_USER"); 
+// void *fillUserList(){
+//   struct json_object *requestUsers = json_object_new_object(),
+//   *actionSon = json_object_new_string("LIST_USER"); 
 
-  json_object_object_add(requestUsers, "action", actionSon);
-  //Get my IP
+//   json_object_object_add(requestUsers, "action", actionSon);
+//   //Get my IP
 
-  puts("asdfasdfasdfasdf");
-  printf("%s\n", json_object_to_json_string(requestID));
+//   puts("asdfasdfasdfasdf");
+//   printf("%s\n", json_object_to_json_string(requestUsers));
 
-  const char *reqStr = json_object_to_json_string(requestID);
+//   const char *reqStr = json_object_to_json_string(requestUsers);
 
-  if( write(sockfd2 , reqStr , strlen(reqStr)) < 0)
-  {
-      puts("Send failed");
-  }
+//   if( write(sockfd2 , reqStr , strlen(reqStr)) < 0)
+//   {
+//       puts("Send failed");
+//   }
 
-  if( read(sockfd2 , server_reply , 1000) < 0)
-  {
-    puts("recv failed");
-  }
-}
+//   if( read(sockfd2 , server_reply , 1000) < 0)
+//   {
+//     puts("recv failed");
+//   }
+// }
 
 
 void *renderUsers(gpointer data) {
-  fillUserList(); 
   int i;
   for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
     sprintf(((ChatClient *)data)->buffer, "User is: %s", ((ChatClient *)data)->users[i].status);
