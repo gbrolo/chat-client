@@ -12,20 +12,12 @@
 #include <stddef.h>
 #include <json.h>
 
+int sock;
+struct sockaddr_in server;
+char socket_message[1000] , server_reply[2000];
 
-#define BUFFER_MSJ_SIZE 1024
-
-struct sockaddr_in server; //This is our main socket variable.
-int fd; //This is the socket file descriptor that will be used to identify the socket
-int conn; //This is the connection file descriptor.
-char mensaje[BUFFER_MSJ_SIZE] = ""; //This array will store the messages that are sent by the server
-char mensaje2[BUFFER_MSJ_SIZE] = "";
-char *server_IP;
-u_short port;
 char servInfoIp[32];
 char servInfoPort[32]; 
-
-char getUsersResult[1000];
 
 // message struct: this will hold messages provided by server
 typedef struct {
@@ -137,7 +129,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   char comboBuffer[32];
   char labelBuffer[32];
   sprintf(comboBuffer, "%s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
-  sprintf(labelBuffer, "You are %s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
+  sprintf(labelBuffer, "%s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
   gtk_label_set_text(GTK_LABEL(((ChatClient *)data)->statusLbl),labelBuffer);
   // send status with comboBuffer
   g_print("%s\n", comboBuffer);
@@ -159,31 +151,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
 
  //---------------Envio de paquetes
   int newPort = strtol(servInfoPort , NULL, 10);
-  int sock;
-  struct sockaddr_in server;
-  char message[1000] , server_reply[2000];
 
-  //Create socket
-  sock = socket(AF_INET , SOCK_STREAM , 0);
-  if (sock == -1)
-  {
-      printf("Could not create socket");
-  }
-  puts("Socket created");
-
-  server.sin_addr.s_addr = inet_addr(servInfoIp);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( newPort );
-
-  //Connect to remote server
-  if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
-  {
-      perror("connect failed. Error");
-      return 1;
-  }
-  puts("Connected for messages \n");
-  //keep communicating with server
-  //Send some data
   if( send(sock , statusChanged , strlen(statusChanged) , 0) < 0)
   {
       puts("Send failed");
@@ -198,6 +166,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   puts("\n-----------------------------------------------");
 
   close(sock);
+  statusChanged = ""; 
   //=============================================================
 
 
@@ -242,35 +211,7 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
 
   //==============Envio de Paquetes=====================
   int newPort = strtol(servInfoPort , NULL, 10);
-  int sock;
-  struct sockaddr_in server;
-  char message[1000] , server_reply[2000];
-  puts("despues de newport"); 
 
-  //Create socket
-  sock = socket(AF_INET , SOCK_STREAM , 0);
-  if (sock == -1)
-  {
-      printf("Could not create socket");
-  }
-  puts("Socket created");
-
-  printf("%s", servInfoIp); 
-  printf("%s", servInfoPort); 
-
-  server.sin_addr.s_addr = inet_addr(servInfoIp);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( newPort );
-
-  //Connect to remote server
-  if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
-  {
-      perror("connect failed. Error");
-      return 1;
-  }
-  puts("Connected for messages \n");
-  //keep communicating with server
-  //Send some data
   if( send(sock , messageString , strlen(messageString) , 0) < 0)
   {
       puts("Send failed");
@@ -286,10 +227,7 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
 
   close(sock);
 
-  //=============================================================
-
-
-
+  //============================================================
 }
 
 // Here we need to make the call to the server to fill up messages list
@@ -451,8 +389,6 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
 
   g_print("%s, %s, %s\n", username, ip, port);
 
-
-  int sockfd;
   char server_reply[2000];
   ssize_t n;
 
@@ -461,7 +397,7 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
 
   struct sockaddr_in serv;
 
-  int sock = socket ( AF_INET, SOCK_DGRAM, 0);
+  sock = socket ( AF_INET, SOCK_DGRAM, 0);
 
   //Socket could not be created
   if(sock < 0)
@@ -492,33 +428,6 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
       //Some error
       printf ("Error number : %d . Error message : %s \n" , errno , strerror(errno));
   }
-
-  //=============================================================
-  int sockfd2;
-
-  struct sockaddr_in servaddr;
-
-  sockfd2 = socket(AF_INET, SOCK_STREAM, 0);
-
-  if (sockfd2 == -1) {
-      perror("could not create socket");
-  }
-
-  printf("Created socket\n");
-
-
-  bzero(&servaddr, sizeof(servaddr));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = inet_addr(ip);
-  servaddr.sin_port = htons(portCast);
-
-  connect(sockfd2, (struct sockaddr *)&servaddr, sizeof(servaddr));
-
-
-  //=============================================================
-
-  //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
-
   struct json_object *requestID = json_object_new_object(),
   *ipSon = json_object_new_string(ip),
   *bufferSon = json_object_new_string(buffer),
@@ -534,12 +443,12 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
 
   const char *reqStr = json_object_to_json_string(requestID);
 
-  if( write(sockfd2 , reqStr , strlen(reqStr)) < 0)
+  if( write(sock , reqStr , strlen(reqStr)) < 0)
   {
       puts("Send failed");
   }
 
-  if( read(sockfd2 , server_reply , 1000) < 0)
+  if( read(sock , server_reply , 1000) < 0)
   {
     puts("recv failed");
   }
@@ -586,11 +495,10 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
   my.status = json_object_to_json_string(user_status);
   sprintf(servInfoIp, ip); 
   sprintf(servInfoPort, port);
-  // close(sockfd);
+
 }
 
 int main(int argc, char *argv[]) {
-
 
   //Enviar string requestID para inicial :D
   //Se espera recibir mensaje que contenga string de json
@@ -674,7 +582,7 @@ int main(int argc, char *argv[]) {
   chat.friendsLabel = gtk_label_new("Connected people");
   chat.connectionLbl = gtk_label_new("Username, IP address, port");
 
-  chat.statusLbl = gtk_label_new("You are active");
+  chat.statusLbl = gtk_label_new("Active");
 
   chat.statusCombo = gtk_combo_box_new_text();
   gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Active");
