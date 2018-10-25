@@ -23,7 +23,7 @@ char mensaje2[BUFFER_MSJ_SIZE] = "";
 char *server_IP;
 u_short port;
 char servInfoIp[32];
-char servInfoPort[32]; 
+char servInfoPort[32];
 
 char getUsersResult[1000];
 
@@ -41,9 +41,9 @@ typedef struct{
 } serverInfo;
 
 typedef struct {
-  char *id;
-  char *name;
-  char *status;
+  const char *id;
+  const char *name;
+  const char *status;
 } user;
 
 //Information of self
@@ -95,6 +95,7 @@ typedef struct chat_client_ui {
   message messages[500];
   user users[50];
   int i, j;
+  int sockfd;
 } ChatClient;
 
 void showHelp(GtkWidget *widget, gpointer window) {
@@ -137,7 +138,7 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   char comboBuffer[32];
   char labelBuffer[32];
   sprintf(comboBuffer, "%s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
-  sprintf(labelBuffer, "You are %s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
+  sprintf(labelBuffer, "%s", gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo)));
   gtk_label_set_text(GTK_LABEL(((ChatClient *)data)->statusLbl),labelBuffer);
   // send status with comboBuffer
   g_print("%s\n", comboBuffer);
@@ -145,59 +146,71 @@ void changeStatus(GtkWidget *combo, gpointer data) {
   //==============Creacion del JSON==================
   //Json dentro del cambio de status
   struct json_object *userStatus = json_object_new_object(),
-  *actionSon = json_object_new_string("CHANGED_STATUS"),
-  *userSon = json_object_new_string(my.id),
-  *statusSon = json_object_new_string(labelBuffer);
+      *actionSon = json_object_new_string("CHANGE_STATUS"),
+      *userSon = json_object_new_string(my.id),
+      *statusSon = json_object_new_string(labelBuffer);
+
+      printf("id: %s\n", my.id);
 
   json_object_object_add(userStatus, "action", actionSon);
   json_object_object_add(userStatus, "user", userSon);
   json_object_object_add(userStatus, "status", statusSon);
-  
+
   const char *statusChanged = json_object_to_json_string(userStatus);
 
   //Get my IP
 
  //---------------Envio de paquetes
-  int newPort = strtol(servInfoPort , NULL, 10);
-  int sock;
-  struct sockaddr_in server;
+  // int newPort = strtol(servInfoPort , NULL, 10);
+  int sockfd = ((ChatClient *)data)->sockfd;
+  // struct sockaddr_in server;
   char message[1000] , server_reply[2000];
 
+  printf("sadfsad: %s\n", statusChanged);
+
+  write(sockfd, statusChanged, strlen(statusChanged));
+
+  read(sockfd, server_reply, 2000);
+
+  printf("res: %s\n", server_reply);
+
+
+  // struct json_object *resObj = json_tokener_parse(server_reply);
   //Create socket
-  sock = socket(AF_INET , SOCK_STREAM , 0);
-  if (sock == -1)
-  {
-      printf("Could not create socket");
-  }
-  puts("Socket created");
+  // sock = socket(AF_INET , SOCK_STREAM , 0);
+  // if (sock == -1)
+  // {
+  //     printf("Could not create socket");
+  // }
+  // puts("Socket created");
 
-  server.sin_addr.s_addr = inet_addr(servInfoIp);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( newPort );
-
-  //Connect to remote server
-  if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
-  {
-      perror("connect failed. Error");
-      return 1;
-  }
-  puts("Connected for messages \n");
-  //keep communicating with server
-  //Send some data
-  if( send(sock , statusChanged , strlen(statusChanged) , 0) < 0)
-  {
-      puts("Send failed");
-  }
+  // server.sin_addr.s_addr = inet_addr(servInfoIp);
+  // server.sin_family = AF_INET;
+  // server.sin_port = htons( newPort );
+  //
+  // //Connect to remote server
+  // if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+  // {
+  //     perror("connect failed. Error");
+  //     return 1;
+  // }
+  // puts("Connected for messages \n");
+  // //keep communicating with server
+  // //Send some data
+  // if( send(sock , statusChanged , strlen(statusChanged) , 0) < 0)
+  // {
+  //     puts("Send failed");
+  // }
   //Receive a reply from the server
-  if( recv(sock , server_reply , 2000 , 0) < 0)
-  {
-      puts("recv failed");
-  }
-  puts("\n-----------------------------------------------\nServer reply :");
-  puts(server_reply);
-  puts("\n-----------------------------------------------");
-
-  close(sock);
+  // if( recv(sock , server_reply , 2000 , 0) < 0)
+  // {
+  //     puts("recv failed");
+  // }
+  // puts("\n-----------------------------------------------\nServer reply :");
+  // puts(server_reply);
+  // puts("\n-----------------------------------------------");
+  //
+  // close(sock);
   //=============================================================
 
 
@@ -226,10 +239,10 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
   //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
 
   struct json_object *messageSent = json_object_new_object(),
-  *actionSon = json_object_new_string("SEND_MESSAGE"),
-  *fromSon = json_object_new_string(my.id),
-  *toSon = json_object_new_string(destinatario),
-  *messageSon = json_object_new_string(entryBuffer);  
+      *actionSon = json_object_new_string("SEND_MESSAGE"),
+      *fromSon = json_object_new_string(my.id),
+      *toSon = json_object_new_string(destinatario),
+      *messageSon = json_object_new_string(entryBuffer);
 
   json_object_object_add(messageSent, "action", actionSon);
   json_object_object_add(messageSent, "from", fromSon);
@@ -242,33 +255,33 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
 
   //==============Envio de Paquetes=====================
   int newPort = strtol(servInfoPort , NULL, 10);
-  int sock;
-  struct sockaddr_in server;
+  int sock = ((ChatClient *)data)->sockfd;
+  // struct sockaddr_in server;
   char message[1000] , server_reply[2000];
-  puts("despues de newport"); 
+  puts("despues de newport");
 
   //Create socket
-  sock = socket(AF_INET , SOCK_STREAM , 0);
-  if (sock == -1)
-  {
-      printf("Could not create socket");
-  }
-  puts("Socket created");
+  // sock = socket(AF_INET , SOCK_STREAM , 0);
+  // if (sock == -1)
+  // {
+  //     printf("Could not create socket");
+  // }
+  // puts("Socket created");
 
-  printf("%s", servInfoIp); 
-  printf("%s", servInfoPort); 
-
-  server.sin_addr.s_addr = inet_addr(servInfoIp);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( newPort );
+  // printf("%s", servInfoIp);
+  // printf("%s", servInfoPort);
+  //
+  // server.sin_addr.s_addr = inet_addr(servInfoIp);
+  // server.sin_family = AF_INET;
+  // server.sin_port = htons( newPort );
 
   //Connect to remote server
-  if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
-  {
-      perror("connect failed. Error");
-      return 1;
-  }
-  puts("Connected for messages \n");
+  // if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+  // {
+  //     perror("connect failed. Error");
+  //     return 1;
+  // }
+  // puts("Connected for messages \n");
   //keep communicating with server
   //Send some data
   if( send(sock , messageString , strlen(messageString) , 0) < 0)
@@ -284,7 +297,7 @@ void sendMessage(GtkWidget *button, gpointer data, struct serverInfo *info) {
   puts(server_reply);
   puts("\n-----------------------------------------------");
 
-  close(sock);
+  // close(sock);
 
   //=============================================================
 
@@ -342,7 +355,7 @@ void renderMessages(GtkWidget *widget, gpointer data){
 
 // void *fillUserList(){
 //   struct json_object *requestUsers = json_object_new_object(),
-//   *actionSon = json_object_new_string("LIST_USER"); 
+//   *actionSon = json_object_new_string("LIST_USER");
 
 //   json_object_object_add(requestUsers, "action", actionSon);
 //   //Get my IP
@@ -382,11 +395,66 @@ void *renderUsers(gpointer data) {
     gtk_box_pack_start(GTK_BOX(((ChatClient *)data)->vFriendsBoxView), ((ChatClient *)data)->hFriendInfoBox, FALSE, FALSE, 5);
   }
 
-  gtk_widget_show_all(((ChatClient *)data)->window);  
+  gtk_widget_show_all(((ChatClient *)data)->window);
 }
 
 void renderUsersWithBtn(GtkWidget *button, gpointer data) {
-  int i;
+    // int i;
+
+    int sockfd = ((ChatClient *)data)->sockfd;
+    json_object *req = json_object_new_object(),
+        *action = json_object_new_string("LIST_USER"),
+        *reqStr;
+
+    char server_reply[1000];
+
+    json_object_object_add(req, "action", action);
+
+    reqStr = json_object_to_json_string(req);
+
+    write(sockfd, reqStr, strlen(reqStr));
+
+    puts("user list request");
+
+    read(sockfd, server_reply, 1000);
+
+    printf("res: %s\n", server_reply);
+
+    struct json_object *resObj = json_tokener_parse(server_reply),
+        *status, *users;
+
+    json_object_object_get_ex(resObj, "status", &status);
+    json_object_object_get_ex(resObj, "users", &users);
+
+    printf("asdf: %s\n", json_object_to_json_string(users));
+
+    struct json_object *usr, *id_new, *name_new, *status_new;
+
+    int usercont = json_object_array_length(users);
+    ((ChatClient *)data)->totalUsers = usercont;
+
+    int i;
+    user tempUser;
+    for (i = 0; i < usercont; i++){
+        usr = json_object_array_get_idx(users, i);
+        json_object_object_get_ex(usr, "id", &id_new);
+        json_object_object_get_ex(usr, "name", &name_new);
+        json_object_object_get_ex(usr, "status", &status_new);
+
+        tempUser.id = json_object_get_string(id_new);
+        tempUser.name = json_object_get_string(name_new);
+        tempUser.status = json_object_get_string(status_new);
+
+        ((ChatClient *)data)->users[i] = tempUser;
+    }
+
+    GList *children, *iter;
+    children = gtk_container_get_children(GTK_CONTAINER(((ChatClient *)data)->vFriendsBoxView));
+    for (iter = children; iter != NULL; iter = g_list_next(iter))
+      gtk_widget_destroy(GTK_WIDGET(iter->data));
+    g_list_free(children);
+
+
   for (i = 0; i < ((ChatClient *)data)->totalUsers; i++) {
     sprintf(((ChatClient *)data)->buffer, "User is: %s", ((ChatClient *)data)->users[i].status);
     ((ChatClient *)data)->msg = gtk_label_new(((ChatClient *)data)->buffer);
@@ -514,7 +582,7 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
 
   connect(sockfd2, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-
+  ((ChatClient *)data)->sockfd = sockfd2;
   //=============================================================
 
   //Funcion en desarrollo, obtencion de datos del usuario y servidor al que se va a conectar
@@ -584,7 +652,7 @@ void getHandshakeJson(GtkWidget *button, gpointer data){
   my.id = json_object_to_json_string(id);
   my.name = json_object_to_json_string(user_name);
   my.status = json_object_to_json_string(user_status);
-  sprintf(servInfoIp, ip); 
+  sprintf(servInfoIp, ip);
   sprintf(servInfoPort, port);
   // close(sockfd);
 }
@@ -677,9 +745,9 @@ int main(int argc, char *argv[]) {
   chat.statusLbl = gtk_label_new("You are active");
 
   chat.statusCombo = gtk_combo_box_new_text();
-  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Active");
-  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Busy");
-  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "Inactive");
+  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "active");
+  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "busy");
+  gtk_combo_box_append_text(GTK_COMBO_BOX(chat.statusCombo), "inactive");
 
   g_signal_connect(G_OBJECT(chat.statusCombo), "changed", G_CALLBACK(changeStatus), &chat);
   // widget placement

@@ -15,6 +15,6 @@ client: client.c
 # chat : $(objects)
 # 	$(CC) $(CFLAGS) $(LDFLAGS) -o client $(objects)
 
-.PHONY : clean
+# .PHONY : clean
 clean :
 	-rm client $(objects)
